@@ -1,0 +1,59 @@
+# 서버 설정
+server:
+  port: 8081  # 스프링 부트 서버 포트 설정 (기본 8080 → 8081)
+
+# 스프링 관련 설정
+spring:
+  application:
+    name: SchedulerJava
+  profiles:
+      active: ${SPRING_PROFILES_ACTIVE}  # 기본값
+  config:
+    import: "optional:classpath:env.yml"
+
+  datasource:
+    # MySQL 데이터베이스 연결 정보
+    url: ${DB_URL}        # 외부 환경 변수 참조
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 드라이버 클래스
+
+  jpa:
+    hibernate:
+      ddl-auto: update            # 엔티티 기반 테이블 자동 생성/업데이트
+    show-sql: false               # Hibernate SQL 출력 여부 (true면 SQL 로그 콘솔 출력)
+    properties:
+      hibernate:
+        format_sql: false          # SQL 출력 시 보기 좋게 포맷팅
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  quartz:
+    job-store-type: jdbc           # 스케줄러 데이터 저장 방식 # memory: 서버 메모리에만 저장 # jdbc: DB에 저장 가능
+    jdbc:
+      initialize-schema: never    # quartz 테이블 자동 생성 여부
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: MyClusteredScheduler   # 스케줄러 이름 (클러스터 환경에서 구분용)
+            instanceId: AUTO                     # AUTO: 노드마다 고유 ID 자동 생성
+          jobStore:
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate # DB 드라이버 위임 클래스
+            useProperties: false                 # JobDataMap 직렬화하여 저장할지 여부 (false 권장)
+            tablePrefix: scheduler_              # Quartz 테이블 접두어 (스키마에 맞춰 조정)
+            isClustered: true                    # 클러스터링 활성화 여부
+            clusterCheckinInterval: 20000        # 클러스터 노드 상태 확인 주기 (ms)
+  sql:
+    init:
+      # SQL 초기화 모드 설정
+      # 'always' : 애플리케이션이 시작될 때 항상 schema.sql data.sql 실행
+      # 'embedded' : H2, HSQLDB, Derby 같은 내장 DB 실행
+      # 'never' : SQL 초기화 실행하지 않음
+      mode: always
+
+logging:
+  level:
+    org.hibernate.SQL: OFF               # SQL 쿼리
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # ? 파라미터 값
+    org.quartz: WARN   # Quartz 로그 레벨을 WARN 이상으로 올림
+    org.springframework.security: WARN

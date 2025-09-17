@@ -1,0 +1,51 @@
+// ==============================
+// Gradle 플러그인 설정
+// ==============================
+plugins
+{
+    id 'org.springframework.boot' version '3.3.3' // Spring Boot 플러그인
+    id 'io.spring.dependency-management' version '1.1.6' // Spring 의존성 관리
+}
+
+group = 'com.example'       // 프로젝트 그룹
+version = '1.0-SNAPSHOT'    // 프로젝트 버전
+
+// ==============================
+// 의존성(Dependencies)
+// ==============================
+dependencies
+{
+    // ---------- 테스트 라이브러리 ----------
+    testImplementation platform('org.junit:junit-bom:5.9.1')  // JUnit BOM (버전 관리)
+    testImplementation 'org.junit.jupiter:junit-jupiter'      // JUnit5 테스트
+
+    // ---------- Spring Boot Starter ----------
+    implementation 'org.springframework.boot:spring-boot-starter-quartz'  // Quartz 스케줄러
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA + Hibernate
+    implementation 'org.springframework.boot:spring-boot-starter-web'      // Spring MVC + REST
+
+    // ---------- DB 드라이버 ----------
+    runtimeOnly 'com.mysql:mysql-connector-j' // MySQL 사용 시
+    // runtimeOnly 'org.postgresql:postgresql' // PostgreSQL 사용 시
+
+    // ---------- 테스트 지원 ----------
+    testImplementation 'org.springframework.boot:spring-boot-starter-test' // Spring 테스트 + JUnit
+
+    // ---------- Lombok ----------
+    compileOnly 'org.projectlombok:lombok'           // 컴파일 시 Lombok만 필요
+    annotationProcessor 'org.projectlombok:lombok'  // Lombok annotation 처리
+    testCompileOnly 'org.projectlombok:lombok'      // 테스트 코드용 Lombok
+    testAnnotationProcessor 'org.projectlombok:lombok' // 테스트 annotation 처리
+
+    // ---------- Spring Security ----------
+    implementation 'org.springframework.boot:spring-boot-starter-security' // Spring Security
+
+}
+
+// ==============================
+// 테스트 설정
+// ==============================
+test
+{
+    useJUnitPlatform() // JUnit5 사용
+}
