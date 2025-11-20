@@ -292,13 +292,14 @@ public class SchedulerService
         // 새로운 JobDetail 생성 (수정된 정보로)
         JobDetail newJobDetail = JobBuilder.newJob(DynamicJob.class) // 실제 실행할 작업 클래스
             .withIdentity(job.getJobName(), job.getJobGroup()) // 새로운 작업명과 그룹으로 설정
+            .withDescription(job.getDescription()) // 작업 설명 추가
             .usingJobData("description", job.getDescription()) // 작업 데이터에 설명 정보 추가
             .build();
 
         // 새로운 Trigger 생성 (수정된 Cron 표현식으로)
         CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule(job.getCronExpression());
         CronTrigger newTrigger = TriggerBuilder.newTrigger()
-            .withIdentity(job.getJobName(), job.getJobGroup()) // 트리거 식별자도 새 정보로 설정
+            .withIdentity(job.getJobName() + "Trigger", job.getJobGroup()) // 트리거 식별자도 새 정보로 설정
             .withSchedule(scheduleBuilder) // 새로운 Cron 스케줄 적용
             .build();
 
@@ -314,6 +315,9 @@ public class SchedulerService
 
         // 변경된 정보를 데이터베이스에 저장
         jobRepository.save(existingJob);
+
+        // 업데이트된 작업을 즉시 중단 상태로 변경
+        pauseJob(existingJob.getJobName(), existingJob.getJobGroup());
 
         // 업데이트된 작업 객체를 반환
         return existingJob;
