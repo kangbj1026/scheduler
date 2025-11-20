@@ -3,147 +3,147 @@
 -- =========================================================
 
 -- 1️⃣ JOB 정보를 저장하는 테이블
-CREATE TABLE IF NOT EXISTS SCHEDULER_JOB_DETAILS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,        -- 스케줄러 이름 (멀티 스케줄러 지원)
-    JOB_NAME VARCHAR(200) NOT NULL,          -- Job 이름
-    JOB_GROUP VARCHAR(200) NOT NULL,         -- Job 그룹
-    DESCRIPTION VARCHAR(250) NULL,           -- Job 설명
-    JOB_CLASS_NAME VARCHAR(250) NOT NULL,    -- 실행할 Job 클래스명
-    IS_DURABLE VARCHAR(1) NOT NULL,          -- Job이 영속적인지 여부
-    IS_NONCONCURRENT VARCHAR(1) NOT NULL,    -- 동시 실행 불가 여부
-    IS_UPDATE_DATA VARCHAR(1) NOT NULL,      -- JobDataMap 갱신 허용 여부
-    REQUESTS_RECOVERY VARCHAR(1) NOT NULL,   -- 실패 시 복구 여부
-    JOB_DATA BLOB NULL,                       -- JobDataMap 저장
-    PRIMARY KEY (SCHED_NAME, JOB_NAME, JOB_GROUP)
-) ENGINE=InnoDB;
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_JOB_DETAILS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,        -- 스케줄러 이름 (멀티 스케줄러 지원)
+--     JOB_NAME VARCHAR(200) NOT NULL,          -- Job 이름
+--     JOB_GROUP VARCHAR(200) NOT NULL,         -- Job 그룹
+--     DESCRIPTION VARCHAR(250) NULL,           -- Job 설명
+--     JOB_CLASS_NAME VARCHAR(250) NOT NULL,    -- 실행할 Job 클래스명
+--     IS_DURABLE VARCHAR(1) NOT NULL,          -- Job이 영속적인지 여부
+--     IS_NONCONCURRENT VARCHAR(1) NOT NULL,    -- 동시 실행 불가 여부
+--     IS_UPDATE_DATA VARCHAR(1) NOT NULL,      -- JobDataMap 갱신 허용 여부
+--     REQUESTS_RECOVERY VARCHAR(1) NOT NULL,   -- 실패 시 복구 여부
+--     JOB_DATA BLOB NULL,                       -- JobDataMap 저장
+--     PRIMARY KEY (SCHED_NAME, JOB_NAME, JOB_GROUP)
+-- ) ENGINE=InnoDB;
+-- 
+-- -- 2️⃣ Trigger 기본 정보 테이블
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_TRIGGERS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     TRIGGER_NAME VARCHAR(200) NOT NULL,      -- Trigger 이름
+--     TRIGGER_GROUP VARCHAR(200) NOT NULL,     -- Trigger 그룹
+--     JOB_NAME VARCHAR(200) NOT NULL,          -- 연동된 Job 이름
+--     JOB_GROUP VARCHAR(200) NOT NULL,         -- 연동된 Job 그룹
+--     DESCRIPTION VARCHAR(250) NULL,
+--     NEXT_FIRE_TIME BIGINT NULL,              -- 다음 실행 시간 (timestamp)
+--     PREV_FIRE_TIME BIGINT NULL,              -- 이전 실행 시간
+--     PRIORITY INT NULL,                        -- 실행 우선순위
+--     TRIGGER_STATE VARCHAR(16) NOT NULL,      -- PAUSED, WAITING 등 상태
+--     TRIGGER_TYPE VARCHAR(8) NOT NULL,        -- SIMPLE / CRON / BLOB / ...
+--     START_TIME BIGINT NOT NULL,              -- 시작 시간
+--     END_TIME BIGINT NULL,                     -- 종료 시간
+--     CALENDAR_NAME VARCHAR(200) NULL,         -- 연결된 Calendar 이름
+--     MISFIRE_INSTR SMALLINT NULL,             -- Misfire 정책
+--     JOB_DATA BLOB NULL,                       -- Trigger 관련 JobData
+--     PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+-- ) ENGINE=InnoDB;
+-- 
+-- -- 3️⃣ Quartz 내부 Lock 테이블
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_LOCKS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     LOCK_NAME VARCHAR(40) NOT NULL,
+--     PRIMARY KEY (SCHED_NAME, LOCK_NAME)
+-- ) ENGINE=InnoDB;
+-- 
+-- -- 4️⃣ Scheduler 상태 정보
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_SCHEDULER_STATE
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     INSTANCE_NAME VARCHAR(200) NOT NULL,
+--     LAST_CHECKIN_TIME BIGINT NOT NULL,       -- 마지막 체크인 시각
+--     CHECKIN_INTERVAL BIGINT NOT NULL,        -- 체크인 주기
+--     PRIMARY KEY (SCHED_NAME, INSTANCE_NAME)
+-- ) ENGINE=InnoDB;
+-- 
+-- -- 5️⃣ 실행된 Trigger 기록
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_FIRED_TRIGGERS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     ENTRY_ID VARCHAR(95) NOT NULL,
+--     TRIGGER_NAME VARCHAR(200) NOT NULL,
+--     TRIGGER_GROUP VARCHAR(200) NOT NULL,
+--     INSTANCE_NAME VARCHAR(200) NOT NULL,
+--     FIRED_TIME BIGINT NOT NULL,              -- 실행 시각
+--     SCHED_TIME BIGINT NOT NULL,              -- 스케줄링 시각
+--     PRIORITY INT NOT NULL,
+--     STATE VARCHAR(16) NOT NULL,              -- ACQUIRED, COMPLETE 등
+--     JOB_NAME VARCHAR(200) NULL,
+--     JOB_GROUP VARCHAR(200) NULL,
+--     IS_NONCONCURRENT VARCHAR(1) NULL,
+--     REQUESTS_RECOVERY VARCHAR(1) NULL,
+--     PRIMARY KEY (SCHED_NAME, ENTRY_ID)
+-- ) ENGINE=InnoDB;
 
--- 2️⃣ Trigger 기본 정보 테이블
-CREATE TABLE IF NOT EXISTS SCHEDULER_TRIGGERS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    TRIGGER_NAME VARCHAR(200) NOT NULL,      -- Trigger 이름
-    TRIGGER_GROUP VARCHAR(200) NOT NULL,     -- Trigger 그룹
-    JOB_NAME VARCHAR(200) NOT NULL,          -- 연동된 Job 이름
-    JOB_GROUP VARCHAR(200) NOT NULL,         -- 연동된 Job 그룹
-    DESCRIPTION VARCHAR(250) NULL,
-    NEXT_FIRE_TIME BIGINT NULL,              -- 다음 실행 시간 (timestamp)
-    PREV_FIRE_TIME BIGINT NULL,              -- 이전 실행 시간
-    PRIORITY INT NULL,                        -- 실행 우선순위
-    TRIGGER_STATE VARCHAR(16) NOT NULL,      -- PAUSED, WAITING 등 상태
-    TRIGGER_TYPE VARCHAR(8) NOT NULL,        -- SIMPLE / CRON / BLOB / ...
-    START_TIME BIGINT NOT NULL,              -- 시작 시간
-    END_TIME BIGINT NULL,                     -- 종료 시간
-    CALENDAR_NAME VARCHAR(200) NULL,         -- 연결된 Calendar 이름
-    MISFIRE_INSTR SMALLINT NULL,             -- Misfire 정책
-    JOB_DATA BLOB NULL,                       -- Trigger 관련 JobData
-    PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
-) ENGINE=InnoDB;
-
--- 3️⃣ Simple Trigger 전용 테이블
-CREATE TABLE IF NOT EXISTS SCHEDULER_SIMPLE_TRIGGERS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    TRIGGER_NAME VARCHAR(200) NOT NULL,
-    TRIGGER_GROUP VARCHAR(200) NOT NULL,
-    REPEAT_COUNT INT NOT NULL,               -- 반복 횟수 (-1 무한)
-    REPEAT_INTERVAL BIGINT NOT NULL,         -- 반복 간격 (ms)
-    TIMES_TRIGGERED INT NOT NULL,            -- 지금까지 실행된 횟수
-    PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
-) ENGINE=InnoDB;
-
--- 4️⃣ Cron Trigger 전용 테이블
-CREATE TABLE IF NOT EXISTS SCHEDULER_CRON_TRIGGERS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    TRIGGER_NAME VARCHAR(200) NOT NULL,
-    TRIGGER_GROUP VARCHAR(200) NOT NULL,
-    CRON_EXPRESSION VARCHAR(120) NOT NULL,   -- Cron 표현식
-    TIME_ZONE_ID VARCHAR(80),                 -- TimeZone
-    PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
-) ENGINE=InnoDB;
-
--- 5️⃣ Simple / Cron 외 특수 Trigger 속성 저장
-CREATE TABLE IF NOT EXISTS SCHEDULER_SIMPROP_TRIGGERS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    TRIGGER_NAME VARCHAR(200) NOT NULL,
-    TRIGGER_GROUP VARCHAR(200) NOT NULL,
-    STR_PROP_1 VARCHAR(512),                 -- 문자열 속성 1
-    STR_PROP_2 VARCHAR(512),                 -- 문자열 속성 2
-    STR_PROP_3 VARCHAR(512),                 -- 문자열 속성 3
-    INT_PROP_1 INT,                          -- 정수 속성 1
-    INT_PROP_2 INT,                          -- 정수 속성 2
-    LONG_PROP_1 BIGINT,                      -- Long 타입 속성 1
-    LONG_PROP_2 BIGINT,                      -- Long 타입 속성 2
-    DEC_PROP_1 NUMERIC(13,4),                -- 소수(decimal) 속성 1
-    DEC_PROP_2 NUMERIC(13,4),                -- 소수(decimal) 속성 2
-    BOOL_PROP_1 VARCHAR(1),                  -- Boolean 속성 1 (Y/N)
-    BOOL_PROP_2 VARCHAR(1),                  -- Boolean 속성 2 (Y/N)
-    PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)  -- 복합 PK: 스케줄러 + 트리거 이름 + 그룹
-) ENGINE=InnoDB;
-
-
--- 6️⃣ Blob 형태 Trigger 정보 저장
-CREATE TABLE IF NOT EXISTS SCHEDULER_BLOB_TRIGGERS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    TRIGGER_NAME VARCHAR(200) NOT NULL,
-    TRIGGER_GROUP VARCHAR(200) NOT NULL,
-    BLOB_DATA BLOB,
-    PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
-) ENGINE=InnoDB;
-
--- 7️⃣ Calendar 정보 저장
-CREATE TABLE IF NOT EXISTS SCHEDULER_CALENDARS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    CALENDAR_NAME VARCHAR(200) NOT NULL,
-    CALENDAR BLOB NOT NULL,                   -- Serialized Calendar 객체
-    PRIMARY KEY (SCHED_NAME, CALENDAR_NAME)
-) ENGINE=InnoDB;
-
--- 8️⃣ 실행된 Trigger 기록
-CREATE TABLE IF NOT EXISTS SCHEDULER_FIRED_TRIGGERS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    ENTRY_ID VARCHAR(95) NOT NULL,
-    TRIGGER_NAME VARCHAR(200) NOT NULL,
-    TRIGGER_GROUP VARCHAR(200) NOT NULL,
-    INSTANCE_NAME VARCHAR(200) NOT NULL,
-    FIRED_TIME BIGINT NOT NULL,              -- 실행 시각
-    SCHED_TIME BIGINT NOT NULL,              -- 스케줄링 시각
-    PRIORITY INT NOT NULL,
-    STATE VARCHAR(16) NOT NULL,              -- ACQUIRED, COMPLETE 등
-    JOB_NAME VARCHAR(200) NULL,
-    JOB_GROUP VARCHAR(200) NULL,
-    IS_NONCONCURRENT VARCHAR(1) NULL,
-    REQUESTS_RECOVERY VARCHAR(1) NULL,
-    PRIMARY KEY (SCHED_NAME, ENTRY_ID)
-) ENGINE=InnoDB;
-
--- 9️⃣ Quartz 내부 Lock 테이블
-CREATE TABLE IF NOT EXISTS SCHEDULER_LOCKS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    LOCK_NAME VARCHAR(40) NOT NULL,
-    PRIMARY KEY (SCHED_NAME, LOCK_NAME)
-) ENGINE=InnoDB;
-
--- 🔟 Pause 상태인 Trigger 그룹
-CREATE TABLE IF NOT EXISTS SCHEDULER_PAUSED_TRIGGER_GRPS
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    TRIGGER_GROUP VARCHAR(200) NOT NULL,
-    PRIMARY KEY (SCHED_NAME, TRIGGER_GROUP)
-) ENGINE=InnoDB;
-
--- 1️⃣1️⃣ Scheduler 상태 정보
-CREATE TABLE IF NOT EXISTS SCHEDULER_SCHEDULER_STATE
-(
-    SCHED_NAME VARCHAR(120) NOT NULL,
-    INSTANCE_NAME VARCHAR(200) NOT NULL,
-    LAST_CHECKIN_TIME BIGINT NOT NULL,       -- 마지막 체크인 시각
-    CHECKIN_INTERVAL BIGINT NOT NULL,        -- 체크인 주기
-    PRIMARY KEY (SCHED_NAME, INSTANCE_NAME)
-) ENGINE=InnoDB;
+-- ======================================= JDBCJobStore 적용시 여기까지 주석 해제
+-- -- 6️⃣ Blob 형태 Trigger 정보 저장
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_BLOB_TRIGGERS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     TRIGGER_NAME VARCHAR(200) NOT NULL,
+--     TRIGGER_GROUP VARCHAR(200) NOT NULL,
+--     BLOB_DATA BLOB,
+--     PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+-- ) ENGINE=InnoDB;
+--
+-- -- 7️⃣ Calendar 정보 저장
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_CALENDARS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     CALENDAR_NAME VARCHAR(200) NOT NULL,
+--     CALENDAR BLOB NOT NULL,                   -- Serialized Calendar 객체
+--     PRIMARY KEY (SCHED_NAME, CALENDAR_NAME)
+-- ) ENGINE=InnoDB;
+--
+-- -- 8️⃣ Simple / Cron 외 특수 Trigger 속성 저장
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_SIMPROP_TRIGGERS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     TRIGGER_NAME VARCHAR(200) NOT NULL,
+--     TRIGGER_GROUP VARCHAR(200) NOT NULL,
+--     STR_PROP_1 VARCHAR(512),                 -- 문자열 속성 1
+--     STR_PROP_2 VARCHAR(512),                 -- 문자열 속성 2
+--     STR_PROP_3 VARCHAR(512),                 -- 문자열 속성 3
+--     INT_PROP_1 INT,                          -- 정수 속성 1
+--     INT_PROP_2 INT,                          -- 정수 속성 2
+--     LONG_PROP_1 BIGINT,                      -- Long 타입 속성 1
+--     LONG_PROP_2 BIGINT,                      -- Long 타입 속성 2
+--     DEC_PROP_1 NUMERIC(13,4),                -- 소수(decimal) 속성 1
+--     DEC_PROP_2 NUMERIC(13,4),                -- 소수(decimal) 속성 2
+--     BOOL_PROP_1 VARCHAR(1),                  -- Boolean 속성 1 (Y/N)
+--     BOOL_PROP_2 VARCHAR(1),                  -- Boolean 속성 2 (Y/N)
+--     PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)  -- 복합 PK: 스케줄러 + 트리거 이름 + 그룹
+-- ) ENGINE=InnoDB;
+--
+-- -- 9️⃣ Simple Trigger 전용 테이블
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_SIMPLE_TRIGGERS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     TRIGGER_NAME VARCHAR(200) NOT NULL,
+--     TRIGGER_GROUP VARCHAR(200) NOT NULL,
+--     REPEAT_COUNT INT NOT NULL,               -- 반복 횟수 (-1 무한)
+--     REPEAT_INTERVAL BIGINT NOT NULL,         -- 반복 간격 (ms)
+--     TIMES_TRIGGERED INT NOT NULL,            -- 지금까지 실행된 횟수
+--     PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+-- ) ENGINE=InnoDB;
+--
+-- -- 🔟 Pause 상태인 Trigger 그룹
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_PAUSED_TRIGGER_GRPS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     TRIGGER_GROUP VARCHAR(200) NOT NULL,
+--     PRIMARY KEY (SCHED_NAME, TRIGGER_GROUP)
+-- ) ENGINE=InnoDB;
+--
+-- -- 1️⃣1️⃣ Cron Trigger 전용 테이블
+-- CREATE TABLE IF NOT EXISTS SCHEDULER_CRON_TRIGGERS
+-- (
+--     SCHED_NAME VARCHAR(120) NOT NULL,
+--     TRIGGER_NAME VARCHAR(200) NOT NULL,
+--     TRIGGER_GROUP VARCHAR(200) NOT NULL,
+--     CRON_EXPRESSION VARCHAR(120) NOT NULL,   -- Cron 표현식
+--     TIME_ZONE_ID VARCHAR(80),                 -- TimeZone
+--     PRIMARY KEY (SCHED_NAME, TRIGGER_NAME, TRIGGER_GROUP)
+-- ) ENGINE=InnoDB;

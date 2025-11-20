@@ -28,21 +28,50 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
 
   quartz:
-    job-store-type: jdbc           # 스케줄러 데이터 저장 방식 # memory: 서버 메모리에만 저장 # jdbc: DB에 저장 가능
+    # -------------------------------------------------------
+    # ★ 스케줄러 저장 방식 선택
+    #   memory → RAMJobStore (DB 안씀, 단일 서버)
+    #   jdbc   → JDBCJobStore (DB 사용, 클러스터 가능)
+    # -------------------------------------------------------
+    job-store-type: memory           # ← 기본은 메모리 방식
     jdbc:
-      initialize-schema: never    # quartz 테이블 자동 생성 여부
+      initialize-schema: never      # Quartz 테이블 자동 생성 옵션
+                                    # never    : 어떤 DB에서도 절대 자동 생성하지 않음 (운영 환경 권장)
+                                    # embedded : H2/HSQL/Derby 같은 내장 DB에서만 자동 생성 (개발 테스트용)
+                                    # always   : 어떤 DB이든 실행 시마다 자동 생성 (초기 개발 단계에서만 사용할 것 — 주의!)
     properties:
       org:
         quartz:
           scheduler:
-            instanceName: MyClusteredScheduler   # 스케줄러 이름 (클러스터 환경에서 구분용)
+            # -------------------------------------------------------
+            # ★ 스케줄러 이름
+            # LocalScheduler       → 로컬/단일 서버용
+            # MyClusteredScheduler → 클러스터 서버용
+            # -------------------------------------------------------
+            instanceName: LocalScheduler
             instanceId: AUTO                     # AUTO: 노드마다 고유 ID 자동 생성
+          # ===========================================================
+          # ① RAMJobStore (메모리 방식, 단일 서버용)
+          #    · DB 테이블 필요 없음
+          #    · 서버 재시작 시 스케줄 초기화
+          #    · 개발/테스트 환경에 적합
+          # -----------------------------------------------------------
           jobStore:
-            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate # DB 드라이버 위임 클래스
-            useProperties: false                 # JobDataMap 직렬화하여 저장할지 여부 (false 권장)
-            tablePrefix: scheduler_              # Quartz 테이블 접두어 (스키마에 맞춰 조정)
-            isClustered: true                    # 클러스터링 활성화 여부
-            clusterCheckinInterval: 20000        # 클러스터 노드 상태 확인 주기 (ms)
+            class: org.quartz.simpl.RAMJobStore        # ★ 메모리 저장 방식
+          # ===========================================================
+          # ② JDBCJobStore (DB 저장 방식, 클러스터 환경용)
+          #    · 아래 블록 전체를 사용하려면 위 RAMJobStore 블록을 주석 처리해야 함
+          #    · 여러 서버에서 스케줄 공유 가능
+          #    · 스케줄이 서버 재시작해도 유지됨
+          # -----------------------------------------------------------
+#          jobStore:
+#            class: org.quartz.impl.jdbcjobstore.JobStoreTX    # ★ DB 저장 방식
+#            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate  # DB 드라이버 위임
+#            useProperties: false                # 직렬화 방식
+#            tablePrefix: scheduler_             # quartz 테이블 접두어(prefix)
+#            isClustered: true                   # ★ 클러스터링 활성화
+#            clusterCheckinInterval: 20000       # 클러스터 노드 체크 주기 (20초)
+          # ===========================================================
   sql:
     init:
       # SQL 초기화 모드 설정
